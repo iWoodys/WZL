@@ -10,7 +10,7 @@ class LoadoutButton(discord.ui.Button):
         # Obtener el documento del loadout de la base de datos
         doc = self.ref.document(self.doc_id).get()
         if not doc.exists:
-            await interaction.response.send_message("Loadout no encontrado.", ephemeral=False)
+            await interaction.response.send_message("Loadout no encontrado.", ephemeral=True)
             return
 
         # Crear el embed con la información del loadout
@@ -30,9 +30,11 @@ class LoadoutButton(discord.ui.Button):
         if "image_url" in data:
             embed.set_image(url=data["image_url"])
 
-        # Enviar el mensaje con el embed a todos los miembros del servidor (en el canal actual)
+        # Primero respondemos a la interacción
+        await interaction.response.send_message("Aquí están los detalles del loadout", ephemeral=True)
+
+        # Luego enviamos el embed con los detalles del loadout
         await interaction.followup.send(embed=embed, ephemeral=False)  # Esto hace que sea visible para todos
-        await interaction.response.send_message("Aquí están los detalles del loadout", ephemeral=True)  # Respuesta efímera solo para el usuario
 
 class LoadoutView(discord.ui.View):
     def __init__(self, ref, loadouts):
