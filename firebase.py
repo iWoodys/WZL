@@ -1,31 +1,36 @@
 import firebase_admin
-from firebase_admin import credentials, db
+from firebase_admin import credentials, firestore
 import os
 import json
 
-# Cargar el JSON desde la variable de entorno
+# Cargar las credenciales desde variable de entorno
 firebase_key = os.getenv("FIREBASE_KEY_JSON")
-
-# Convertir el string a un objeto JSON
 firebase_key_dict = json.loads(firebase_key)
-
-# Reparar el private_key: cambiar "\n" (string) a saltos de línea reales
 firebase_key_dict["private_key"] = firebase_key_dict["private_key"].replace("\\n", "\n")
 
-# Usar ese objeto para inicializar las credenciales
+# Inicializar la app de Firebase
 cred = credentials.Certificate(firebase_key_dict)
+firebase_admin.initialize_app(cred)
 
-firebase_url = os.getenv('FIREBASE_URL')
-
-firebase_admin.initialize_app(cred, {
-    'databaseURL': firebase_url
-})
+# Crear cliente de Firestore
+db = firestore.client()
 
 def get_server_loadouts(server_id):
-    ref = db.reference(f'loadouts/{server_id}')
-    return ref.get()
+    """Devuelve la colección de loadouts para un servidor."""
+    return db.collection('loadouts').document(str(server_id)).collection('items')
 
-def save_server_loadouts(server_id, loadouts):
-    ref = db.reference(f'loadouts/{server_id}')
-    ref.set(loadouts)
+def save_server_loadout(server_id, weapon_name, data):
+    """Guarda o actualiza un loadout específico."""
+    ref = db.collection('loadouts').document(str(server_id)).collection('items').document(weapon_name)
+    ref.set(data)
+
+def delete_server_loadout(server_id, weapon_name):
+    """Elimina un loadout específico."""
+    ref = db.collection('loadouts').document(str(server_id)).collection('items').document(weapon_name)
+    ref.delete()
+
+def get_single_loadout(server_id, weapon_name):
+    """Obtiene un solo loadout específico."""
+    ref = db.collection('loadouts').document(str(server_id)).collection('items').document(weapon_name)
+    return ref.get()
 
