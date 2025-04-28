@@ -94,6 +94,6 @@ Un bot de **Discord** para gestionar loadouts de Call of Duty: Warzone 🎮, usa
 
 ## 📣 Créditos
 
-- Desarrollado por Jorge (@MyAkarii) 👨‍💻
+- Desarrollado por ✧ - 𝘈𝘬𝘢𝘳𝘪 - ✦
 
 ---
