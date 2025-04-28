@@ -84,11 +84,6 @@ Un bot de **Discord** para gestionar loadouts de Call of Duty: Warzone 🎮, usa
 - **Comandos slash fáciles de usar**.
 - **Restricciones de canal opcionales**.
 
----
-
-## 📸 Vista previa
-
-> ¡Aquí se mostraría una captura de cómo se ve el bot funcionando!
 
 ---
 
