@@ -15,9 +15,11 @@ class Warzone(commands.Cog):
     # /loadouts
     @app_commands.command(name="loadouts", description="Ver los loadouts disponibles.")
     async def loadouts(self, interaction: discord.Interaction):
+        await interaction.response.defer()  # Deferimos de inmediato
+
         if interaction.guild_id in self.guild_channels:
             if interaction.channel.id != self.guild_channels[interaction.guild_id]:
-                await interaction.response.send_message("Este comando solo puede usarse en el canal permitido.", ephemeral=True)
+                await interaction.followup.send("Este comando solo puede usarse en el canal permitido.", ephemeral=True)
                 return
 
         ref = get_server_loadouts(interaction.guild_id)
@@ -31,7 +33,7 @@ class Warzone(commands.Cog):
             )
 
         if not buttons:
-            await interaction.response.send_message("No hay loadouts disponibles.", ephemeral=True)
+            await interaction.followup.send("No hay loadouts disponibles.", ephemeral=True)
             return
 
         class LoadoutView(discord.ui.View):
@@ -63,7 +65,7 @@ class Warzone(commands.Cog):
 
                 await interaction_button.response.send_message(embed=embed, ephemeral=True)
 
-        await interaction.response.send_message(view=LoadoutView(), ephemeral=False)
+        await interaction.followup.send(view=LoadoutView(), ephemeral=False)
 
     # /add_load
     @app_commands.command(name="add_load", description="Agregar un nuevo loadout.")
