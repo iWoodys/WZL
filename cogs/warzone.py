@@ -10,12 +10,12 @@ OWNER_ID = int(os.getenv('OWNER_ID'))
 class Warzone(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.guild_channels = {}  # Guild-specific channel restriction
+        self.guild_channels = {}
 
     # /loadouts
     @app_commands.command(name="loadouts", description="Ver los loadouts disponibles.")
     async def loadouts(self, interaction: discord.Interaction):
-        await interaction.response.defer()  # Deferimos de inmediato
+        await interaction.response.defer()
 
         if interaction.guild_id in self.guild_channels:
             if interaction.channel.id != self.guild_channels[interaction.guild_id]:
@@ -25,47 +25,58 @@ class Warzone(commands.Cog):
         ref = get_server_loadouts(interaction.guild_id)
         docs = ref.stream()
 
-        buttons = []
+        loadouts = []
         for doc in docs:
             data = doc.to_dict()
-            buttons.append(
-                discord.ui.Button(label=data.get('title', doc.id), custom_id=doc.id, style=discord.ButtonStyle.success)
-            )
+            loadouts.append((doc.id, data.get('title', doc.id)))
 
-        if not buttons:
+        if not loadouts:
             await interaction.followup.send("No hay loadouts disponibles.", ephemeral=True)
             return
 
+        embed = discord.Embed(
+            title=f"{interaction.user.display_name}, estos son los loadouts actuales:",
+            color=discord.Color.dark_green()
+        )
+
+        for idx, (_, title) in enumerate(loadouts, 1):
+            embed.add_field(name=f"{idx}.", value=title, inline=False)
+
         class LoadoutView(discord.ui.View):
-            def __init__(self):
+            def __init__(self, ref, loadouts):
                 super().__init__(timeout=None)
-                for button in buttons:
+                self.ref = ref
+                for doc_id, title in loadouts:
+                    button = discord.ui.Button(label=title, custom_id=doc_id, style=discord.ButtonStyle.success)
+                    button.callback = self.generate_callback(doc_id)
                     self.add_item(button)
 
-            @discord.ui.button(label="Cargar", style=discord.ButtonStyle.success)
-            async def loadout_button(self, interaction_button: discord.Interaction, button: discord.ui.Button):
-                doc = ref.document(button.custom_id).get()
-                if not doc.exists:
-                    await interaction_button.response.send_message("Loadout no encontrado.", ephemeral=True)
-                    return
+            def generate_callback(self, doc_id):
+                async def callback(interaction_button: discord.Interaction):
+                    doc = self.ref.document(doc_id).get()
+                    if not doc.exists:
+                        await interaction_button.response.send_message("Loadout no encontrado.", ephemeral=True)
+                        return
 
-                data = doc.to_dict()
-                embed = discord.Embed(
-                    title=data.get('title', 'Loadout'),
-                    color=discord.Color.dark_green()
-                )
+                    data = doc.to_dict()
+                    embed = discord.Embed(
+                        title=data.get('title', 'Loadout'),
+                        color=discord.Color.dark_green()
+                    )
 
-                fields = ["Optic", "Muzzle", "Barrel", "Underbarrel", "Magazine", "Rear Grip", "Fire Mods"]
-                for field in fields:
-                    if field in data and data[field] != "NO":
-                        embed.add_field(name=field, value=data[field], inline=False)
+                    fields = ["Optic", "Muzzle", "Barrel", "Underbarrel", "Magazine", "Rear Grip", "Fire Mods"]
+                    for field in fields:
+                        if field in data and data[field] != "NO":
+                            embed.add_field(name=field, value=data[field], inline=False)
 
-                if "image_url" in data:
-                    embed.set_image(url=data["image_url"])
+                    if "image_url" in data:
+                        embed.set_image(url=data["image_url"])
 
-                await interaction_button.response.send_message(embed=embed, ephemeral=True)
+                    await interaction_button.response.send_message(embed=embed, ephemeral=True)
+                return callback
 
-        await interaction.followup.send(view=LoadoutView(), ephemeral=False)
+        view = LoadoutView(ref, loadouts)
+        await interaction.followup.send(embed=embed, view=view, ephemeral=False)
 
     # /add_load
     @app_commands.command(name="add_load", description="Agregar un nuevo loadout.")
@@ -168,7 +179,6 @@ class Warzone(commands.Cog):
             await interaction.response.send_message("Restricción de canal eliminada.", ephemeral=True)
         else:
             await interaction.response.send_message("No había restricciones activas.", ephemeral=True)
-
 
 async def setup(bot):
     await bot.add_cog(Warzone(bot))
