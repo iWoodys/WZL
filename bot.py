@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
-from discord import app_commands
 import os
+import asyncio
 from keep_alive import keep_alive
 from dotenv import load_dotenv
 
@@ -13,6 +13,8 @@ OWNER_ID = int(os.getenv('OWNER_ID'))
 intents = discord.Intents.default()
 intents.guilds = True
 intents.messages = True
+intents.voice_states = True  # Por si usas eventos de voz en warzone.py
+intents.message_content = True  # MUY IMPORTANTE para slash commands o texto
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
@@ -22,7 +24,13 @@ async def on_ready():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="en Twitch"))
     print(f'Logged in as {bot.user}')
 
-bot.load_extension("cogs.warzone")
+async def load_extensions():
+    await bot.load_extension("cogs.warzone")
 
-keep_alive()
-bot.run(TOKEN)
+async def main():
+    keep_alive()  # Levanta el servidor Flask para mantener Render activo
+    async with bot:
+        await load_extensions()
+        await bot.start(TOKEN)
+
+asyncio.run(main())
