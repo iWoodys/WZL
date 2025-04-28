@@ -38,14 +38,17 @@ class Warzone(commands.Cog):
             await interaction.followup.send("No hay loadouts disponibles.", ephemeral=True)
             return
 
-        # Crear un embed con la lista de loadouts
+        # Crear un embed con la lista de loadouts de manera compacta
         embed = discord.Embed(
             title=f"{interaction.user.display_name}, estos son los loadouts actuales:",
             color=discord.Color.dark_green()
         )
 
-        for idx, (_, title) in enumerate(loadouts, 1):
-            embed.add_field(name=f"{idx}.", value=title, inline=False)
+        # Crear una lista con los títulos de los loadouts en formato compacto
+        loadouts_text = "\n".join([f"{idx}. {title}" for idx, (_, title) in enumerate(loadouts, 1)])
+
+        # Agregar todos los loadouts en un solo campo
+        embed.add_field(name="Loadouts:", value=loadouts_text, inline=False)
 
         # Enviar el embed con los loadouts y los botones para interactuar con ellos
         await interaction.followup.send(embed=embed, view=LoadoutView(ref, loadouts), ephemeral=False)  # Esto es correcto: 'ephemeral=False' hace visible el mensaje para todos
