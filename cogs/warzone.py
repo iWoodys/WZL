@@ -67,9 +67,8 @@ class Warzone(commands.Cog):
             )
             return
 
-        ref.document(weapon_name).set({
-            "title": title,
-            "image_url": image_url,
+        # Guardar solo los accesorios válidos (distintos de "NO")
+        accessories = {
             "Optic": optic,
             "Muzzle": muzzle,
             "Barrel": barrel,
@@ -77,9 +76,21 @@ class Warzone(commands.Cog):
             "Magazine": magazine,
             "Rear Grip": rear_grip,
             "Fire Mods": fire_mods
-        })
+        }
+        accessories = {k: v for k, v in accessories.items() if v and v.upper() != "NO"}
+
+        # Datos finales del loadout
+        data = {
+            "title": title,
+            "image_url": image_url,
+            **accessories
+        }
+
+        # Guardar en Firebase
+        ref.document(weapon_name).set(data)
 
         await interaction.response.send_message(f"✅ Loadout `{title}` agregado correctamente.", ephemeral=True)
+
 
     # /edit_load con validación premium
     @app_commands.command(name="edit_load", description="Editar un loadout existente. [ADMINISTRADOR - PREMIUM]")
