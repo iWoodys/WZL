@@ -1,9 +1,20 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
+import os
+import json
 
-# Inicializar Firebase con el archivo JSON
-cred = credentials.Certificate("firebase-key.json")
-firebase_admin.initialize_app(cred)  # ✅ Solo una vez
+# Obtener clave Firebase desde variable de entorno
+firebase_key_json = os.getenv("FIREBASE_KEY_JSON")
+
+if firebase_key_json is None:
+    raise ValueError("FIREBASE_KEY_JSON no está definida en las variables de entorno.")
+
+# Cargar JSON con claves de Firebase
+firebase_dict = json.loads(firebase_key_json.replace("\\n", "\n"))
+
+# Inicializar Firebase
+cred = credentials.Certificate(firebase_dict)
+firebase_admin.initialize_app(cred)
 
 # Crear cliente Firestore
 db = firestore.client()
