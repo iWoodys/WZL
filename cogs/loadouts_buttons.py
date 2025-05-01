@@ -30,11 +30,12 @@ class LoadoutButton(discord.ui.Button):
         if "image_url" in data:
             embed.set_image(url=data["image_url"])
 
-        # Primero respondemos a la interacción
-        await interaction.response.send_message("Aquí están los detalles del loadout", ephemeral=True)
-
-        # Luego enviamos el embed con los detalles del loadout
-        await interaction.followup.send(embed=embed, ephemeral=False)  # Esto hace que sea visible para todos
+        # Enviar el mensaje con el embed (visible para todos)
+        await interaction.response.send_message(
+            content="Aquí están los detalles del loadout:",
+            embed=embed,
+            ephemeral=False
+        )
 
 class LoadoutView(discord.ui.View):
     def __init__(self, ref, loadouts):
