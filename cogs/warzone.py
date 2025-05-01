@@ -48,7 +48,7 @@ class Warzone(commands.Cog):
         await interaction.followup.send(embed=embed, view=LoadoutView(ref, loadouts), ephemeral=False)
 
     # /add_load con validación premium
-    @app_commands.command(name="add_load", description="Agregar un nuevo loadout.")
+    @app_commands.command(name="add_load", description="Agregar un nuevo loadout. [ADMINISTRADOR]")
     @app_commands.default_permissions(administrator=True)
     async def add_load(self, interaction: discord.Interaction,
                        weapon_name: str, title: str, image_url: str,
@@ -82,7 +82,7 @@ class Warzone(commands.Cog):
         await interaction.response.send_message(f"✅ Loadout `{title}` agregado correctamente.", ephemeral=True)
 
     # /edit_load con validación premium
-    @app_commands.command(name="edit_load", description="Editar un loadout existente.")
+    @app_commands.command(name="edit_load", description="Editar un loadout existente. [ADMINISTRADOR - PREMIUM]")
     @app_commands.default_permissions(administrator=True)
     async def edit_load(self, interaction: discord.Interaction,
                         weapon_name: str,
@@ -120,7 +120,7 @@ class Warzone(commands.Cog):
         await interaction.response.send_message(f"Loadout `{weapon_name}` actualizado.", ephemeral=True)
 
     # /del_load con validación premium
-    @app_commands.command(name="del_load", description="Eliminar un loadout.")
+    @app_commands.command(name="del_load", description="Eliminar un loadout. [ADMINISTRADOR - PREMIUM] ")
     @app_commands.default_permissions(administrator=True)
     async def del_load(self, interaction: discord.Interaction, weapon_name: str):
         user_id = str(interaction.user.id)
@@ -160,14 +160,14 @@ class Warzone(commands.Cog):
         await interaction.guild.leave()
 
     # /setbot para canal exclusivo
-    @app_commands.command(name="setbot", description="Restringir /loadouts a un canal específico.")
+    @app_commands.command(name="setbot", description="Restringir /loadouts a un canal específico. [ADMINISTRADOR - PREMIUM] ")
     @app_commands.default_permissions(administrator=True)
     async def setbot(self, interaction: discord.Interaction, channel: discord.TextChannel):
         self.guild_channels[interaction.guild_id] = channel.id
         await interaction.response.send_message(f"Canal configurado: {channel.mention}", ephemeral=True)
 
     # /unsetbot para permitir en todos los canales
-    @app_commands.command(name="unsetbot", description="Permitir que /loadouts se use en cualquier canal.")
+    @app_commands.command(name="unsetbot", description="Permitir que /loadouts se use en cualquier canal. [ADMINISTRADOR - PREMIUM] ")
     @app_commands.default_permissions(administrator=True)
     async def unsetbot(self, interaction: discord.Interaction):
         if interaction.guild_id in self.guild_channels:
