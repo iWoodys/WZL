@@ -9,8 +9,14 @@ firebase_key_json = os.getenv("FIREBASE_KEY_JSON")
 if firebase_key_json is None:
     raise ValueError("FIREBASE_KEY_JSON no está definida en las variables de entorno.")
 
-# Cargar JSON con claves de Firebase
-firebase_dict = json.loads(firebase_key_json.replace("\\n", "\n"))
+# Debug: verificar qué forma tiene el texto
+try:
+    # Primero intentamos decodificar directo
+    firebase_dict = json.loads(firebase_key_json)
+except json.JSONDecodeError:
+    # Si falla, intentamos reemplazar los \\n por \n
+    fixed_json = firebase_key_json.replace("\\n", "\n")
+    firebase_dict = json.loads(fixed_json)
 
 # Inicializar Firebase
 cred = credentials.Certificate(firebase_dict)
