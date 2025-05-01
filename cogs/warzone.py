@@ -176,6 +176,19 @@ class Warzone(commands.Cog):
         else:
             await interaction.response.send_message("No había restricciones activas.", ephemeral=True)
 
+    # /info para mostrar información sobre el premium
+    @app_commands.command(name="info_premium", description="Información sobre cómo obtener premium.")
+    async def info(self, interaction: discord.Interaction):
+        embed = discord.Embed(
+            title="⭐ Información Premium",
+            description=(
+                "¿Quieres más loadouts y funciones exclusivas?\n\n"
+                "📩 Contacta directamente al desarrollador: `AkariiDEV`"
+            ),
+            color=discord.Color.gold()
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
 async def setup(bot):
     await bot.add_cog(Warzone(bot))
 
