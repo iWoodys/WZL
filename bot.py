@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import os
 import asyncio
 from keep_alive import keep_alive
@@ -10,6 +10,9 @@ load_dotenv()
 TOKEN = os.getenv('TOKEN')
 OWNER_ID = int(os.getenv('OWNER_ID'))
 BOT_OWNER_ID = int(os.getenv("BOT_OWNER_ID"))
+
+# ⚠️ Reemplazá este valor por el ID del canal que querés actualizar
+GUILD_COUNT_CHANNEL_ID = 1367591515416825876
 
 intents = discord.Intents.default()
 intents.guilds = True
@@ -28,6 +31,22 @@ async def on_ready():
     ))
     print(f'✅ Bot conectado como {bot.user}')
     print(f'✅ Comandos slash sincronizados: {len(synced)}')
+
+    # Iniciar tarea de actualización del canal
+    actualizar_nombre_canal.start()
+
+@tasks.loop(minutes=10)
+async def actualizar_nombre_canal():
+    canal = bot.get_channel(GUILD_COUNT_CHANNEL_ID)
+    if canal:
+        try:
+            num_guilds = len(bot.guilds)
+            nuevo_nombre = f"🌐 En {num_guilds} servidores"
+            await canal.edit(name=nuevo_nombre)
+        except Exception as e:
+            print(f"❌ Error al actualizar el canal: {e}")
+    else:
+        print("⚠️ Canal no encontrado. Revisá el ID.")
 
 async def load_extensions():
     await bot.load_extension("cogs.warzone")
