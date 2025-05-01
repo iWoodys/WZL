@@ -2,6 +2,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import os
 import json
+import tempfile
 
 # Obtener clave Firebase desde variable de entorno
 firebase_key_json = os.getenv("FIREBASE_KEY_JSON")
@@ -9,23 +10,22 @@ firebase_key_json = os.getenv("FIREBASE_KEY_JSON")
 if firebase_key_json is None:
     raise ValueError("FIREBASE_KEY_JSON no está definida en las variables de entorno.")
 
-# Debug: verificar qué forma tiene el texto
-try:
-    # Primero intentamos decodificar directo
-    firebase_dict = json.loads(firebase_key_json)
-except json.JSONDecodeError:
-    # Si falla, intentamos reemplazar los \\n por \n
-    fixed_json = firebase_key_json.replace("\\n", "\n")
-    firebase_dict = json.loads(fixed_json)
+# Decodificar correctamente los caracteres escapados (\n)
+firebase_key_json_decoded = bytes(firebase_key_json, "utf-8").decode("unicode_escape")
+firebase_dict = json.loads(firebase_key_json_decoded)
+
+# Guardar en archivo temporal
+with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as temp_file:
+    json.dump(firebase_dict, temp_file)
+    temp_file_path = temp_file.name
 
 # Inicializar Firebase
-cred = credentials.Certificate(firebase_dict)
+cred = credentials.Certificate(temp_file_path)
 firebase_admin.initialize_app(cred)
 
-# Crear cliente Firestore
 db = firestore.client()
 
-# Funciones de manejo de loadouts
+# Funciones
 def get_server_loadouts(server_id):
     return db.collection('loadouts').document(str(server_id)).collection('items')
 
