@@ -19,7 +19,7 @@ class LoadoutButton(discord.ui.Button):
                 color=discord.Color.dark_green()
             )
 
-            fields = ["Optic", "Muzzle", "Barrel", "Underbarrel", "Magazine", "Rear Grip", "Fire Mods"]
+            fields = ["Optic", "Muzzle", "Barrel", "Underbarrel", "Magazine", "Rear Grip", "Fire Mods", "Stock", "Laser"]
             for field in fields:
                 if field in data:
                     embed.add_field(name=field, value=data[field], inline=False)
