@@ -48,108 +48,106 @@ class Warzone(commands.Cog):
 
         await interaction.followup.send(embed=embed, view=LoadoutView(ref, loadouts), ephemeral=False)
 
-# /add_load con validación premium y nuevos accesorios
-@app_commands.command(name="add_load", description="Agregar un nuevo loadout. [ADMINISTRADOR]")
-@app_commands.default_permissions(administrator=True)
-async def add_load(self, interaction: discord.Interaction,
-                   weapon_name: str, title: str, image_url: str,
-                   optic: str = "NO", muzzle: str = "NO", barrel: str = "NO",
-                   underbarrel: str = "NO", magazine: str = "NO",
-                   rear_grip: str = "NO", fire_mods: str = "NO",
-                   stock: str = "NO", laser: str = "NO"):  # Nuevos accesorios aquí
-    user_id = str(interaction.user.id)
-    guild_id = str(interaction.guild.id)
-    ref = get_server_loadouts(guild_id)
+    # /add_load con validación premium y nuevos accesorios
+    @app_commands.command(name="add_load", description="Agregar un nuevo loadout. [ADMINISTRADOR]")
+    @app_commands.default_permissions(administrator=True)
+    async def add_load(self, interaction: discord.Interaction,
+                       weapon_name: str, title: str, image_url: str,
+                       optic: str = "NO", muzzle: str = "NO", barrel: str = "NO",
+                       underbarrel: str = "NO", magazine: str = "NO",
+                       rear_grip: str = "NO", fire_mods: str = "NO",
+                       stock: str = "NO", laser: str = "NO"):
+        user_id = str(interaction.user.id)
+        guild_id = str(interaction.guild.id)
+        ref = get_server_loadouts(guild_id)
 
-    docs = list(ref.stream())
-    if not is_premium(user_id) and len(docs) >= 5:
-        await interaction.response.send_message(
-            "❌ Alcanzaste el límite de 5 loadouts. Hazte premium para guardar más.",
-            ephemeral=True
-        )
-        return
+        docs = list(ref.stream())
+        if not is_premium(user_id) and len(docs) >= 5:
+            await interaction.response.send_message(
+                "❌ Alcanzaste el límite de 5 loadouts. Hazte premium para guardar más.",
+                ephemeral=True
+            )
+            return
 
-    accessories = {
-        "Optic": optic,
-        "Muzzle": muzzle,
-        "Barrel": barrel,
-        "Underbarrel": underbarrel,
-        "Magazine": magazine,
-        "Rear Grip": rear_grip,
-        "Fire Mods": fire_mods,
-        "Stock": stock,       # Accesorio nuevo
-        "Laser": laser        # Accesorio nuevo
-    }
-    accessories = {k: v for k, v in accessories.items() if v and v.upper() != "NO"}
+        accessories = {
+            "Optic": optic,
+            "Muzzle": muzzle,
+            "Barrel": barrel,
+            "Underbarrel": underbarrel,
+            "Magazine": magazine,
+            "Rear Grip": rear_grip,
+            "Fire Mods": fire_mods,
+            "Stock": stock,
+            "Laser": laser
+        }
+        accessories = {k: v for k, v in accessories.items() if v and v.upper() != "NO"}
 
-    data = {
-        "title": title,
-        "image_url": image_url,
-        **accessories
-    }
+        data = {
+            "title": title,
+            "image_url": image_url,
+            **accessories
+        }
 
-    ref.document(weapon_name).set(data)
-    await interaction.response.send_message(f"✅ Loadout `{title}` agregado correctamente.", ephemeral=True)
+        ref.document(weapon_name).set(data)
+        await interaction.response.send_message(f"✅ Loadout `{title}` agregado correctamente.", ephemeral=True)
 
+    # /edit_load con eliminación de campos si el valor es "NO" y nuevos accesorios
+    @app_commands.command(name="edit_load", description="Editar un loadout existente. [ADMINISTRADOR - PREMIUM]")
+    @app_commands.default_permissions(administrator=True)
+    async def edit_load(self, interaction: discord.Interaction,
+                        weapon_name: str,
+                        optic: str = None, muzzle: str = None, barrel: str = None,
+                        underbarrel: str = None, magazine: str = None,
+                        rear_grip: str = None, fire_mods: str = None,
+                        stock: str = None, laser: str = None):
+        user_id = str(interaction.user.id)
+        if not is_premium(user_id):
+            await interaction.response.send_message(
+                "❌ Este comando es exclusivo para usuarios premium.",
+                ephemeral=True
+            )
+            return
 
-# /edit_load con eliminación de campos si el valor es "NO" y nuevos accesorios
-@app_commands.command(name="edit_load", description="Editar un loadout existente. [ADMINISTRADOR - PREMIUM]")
-@app_commands.default_permissions(administrator=True)
-async def edit_load(self, interaction: discord.Interaction,
-                    weapon_name: str,
-                    optic: str = None, muzzle: str = None, barrel: str = None,
-                    underbarrel: str = None, magazine: str = None,
-                    rear_grip: str = None, fire_mods: str = None,
-                    stock: str = None, laser: str = None):  # Nuevos accesorios aquí
-    user_id = str(interaction.user.id)
-    if not is_premium(user_id):
-        await interaction.response.send_message(
-            "❌ Este comando es exclusivo para usuarios premium.",
-            ephemeral=True
-        )
-        return
+        ref = get_server_loadouts(interaction.guild_id)
+        doc_ref = ref.document(weapon_name)
+        doc = doc_ref.get()
 
-    ref = get_server_loadouts(interaction.guild_id)
-    doc_ref = ref.document(weapon_name)
-    doc = doc_ref.get()
+        if not doc.exists:
+            await interaction.response.send_message("Loadout no encontrado.", ephemeral=True)
+            return
 
-    if not doc.exists:
-        await interaction.response.send_message("Loadout no encontrado.", ephemeral=True)
-        return
+        update_data = {}
+        delete_fields = []
 
-    update_data = {}
-    delete_fields = []
+        fields = {
+            "Optic": optic,
+            "Muzzle": muzzle,
+            "Barrel": barrel,
+            "Underbarrel": underbarrel,
+            "Magazine": magazine,
+            "Rear Grip": rear_grip,
+            "Fire Mods": fire_mods,
+            "Stock": stock,
+            "Laser": laser
+        }
 
-    fields = {
-        "Optic": optic,
-        "Muzzle": muzzle,
-        "Barrel": barrel,
-        "Underbarrel": underbarrel,
-        "Magazine": magazine,
-        "Rear Grip": rear_grip,
-        "Fire Mods": fire_mods,
-        "Stock": stock,       # Accesorio nuevo
-        "Laser": laser        # Accesorio nuevo
-    }
+        for key, value in fields.items():
+            if value is not None:
+                if value.upper() == "NO":
+                    delete_fields.append(key)
+                else:
+                    update_data[key] = value
 
-    for key, value in fields.items():
-        if value is not None:
-            if value.upper() == "NO":
-                delete_fields.append(key)
-            else:
-                update_data[key] = value
+        if update_data:
+            doc_ref.update(update_data)
 
-    if update_data:
-        doc_ref.update(update_data)
+        if delete_fields:
+            doc_ref.update({field: firestore.DELETE_FIELD for field in delete_fields})
 
-    if delete_fields:
-        doc_ref.update({field: firestore.DELETE_FIELD for field in delete_fields})
-
-    await interaction.response.send_message(f"✅ Loadout `{weapon_name}` actualizado correctamente.", ephemeral=True)
-
+        await interaction.response.send_message(f"✅ Loadout `{weapon_name}` actualizado correctamente.", ephemeral=True)
 
     # /del_load con validación premium
-    @app_commands.command(name="del_load", description="Eliminar un loadout. [ADMINISTRADOR - PREMIUM] ")
+    @app_commands.command(name="del_load", description="Eliminar un loadout. [ADMINISTRADOR - PREMIUM]")
     @app_commands.default_permissions(administrator=True)
     async def del_load(self, interaction: discord.Interaction, weapon_name: str):
         user_id = str(interaction.user.id)
@@ -189,14 +187,14 @@ async def edit_load(self, interaction: discord.Interaction,
         await interaction.guild.leave()
 
     # /setbot para canal exclusivo
-    @app_commands.command(name="setbot", description="Restringir /loadouts a un canal específico. [ADMINISTRADOR - PREMIUM] ")
+    @app_commands.command(name="setbot", description="Restringir /loadouts a un canal específico. [ADMINISTRADOR - PREMIUM]")
     @app_commands.default_permissions(administrator=True)
     async def setbot(self, interaction: discord.Interaction, channel: discord.TextChannel):
         self.guild_channels[interaction.guild_id] = channel.id
         await interaction.response.send_message(f"Canal configurado: {channel.mention}", ephemeral=True)
 
     # /unsetbot para permitir en todos los canales
-    @app_commands.command(name="unsetbot", description="Permitir que /loadouts se use en cualquier canal. [ADMINISTRADOR - PREMIUM] ")
+    @app_commands.command(name="unsetbot", description="Permitir que /loadouts se use en cualquier canal. [ADMINISTRADOR - PREMIUM]")
     @app_commands.default_permissions(administrator=True)
     async def unsetbot(self, interaction: discord.Interaction):
         if interaction.guild_id in self.guild_channels:
