@@ -1,4 +1,5 @@
 import discord
+from discord import Interaction
 from discord.ext import commands
 from discord import app_commands
 from firebase import get_server_loadouts
@@ -25,7 +26,7 @@ class Warzone(commands.Cog):
 
     # /loadouts
     @app_commands.command(name="loadouts", description="Ver los loadouts disponibles.")
-    async def loadouts(self, interaction: discord.Interaction):
+    async def loadouts(self, interaction: Interaction):
         await interaction.response.defer()
 
         if interaction.guild_id in self.guild_channels:
@@ -58,7 +59,7 @@ class Warzone(commands.Cog):
 # /add_load con validación premium y validación de URL
 @app_commands.command(name="add_load", description="Agregar un nuevo loadout. [ADMINISTRADOR]")
 @app_commands.default_permissions(administrator=True)
-async def add_load(self, interaction: discord.Interaction,
+async def add_load(self, interaction: Interaction,
                    weapon_name: str, title: str, image_url: str,
                    optic: str = "NO", muzzle: str = "NO", barrel: str = "NO",
                    underbarrel: str = "NO", magazine: str = "NO",
@@ -108,7 +109,7 @@ async def add_load(self, interaction: discord.Interaction,
     # /edit_load con eliminación de campos si el valor es "NO" y nuevos accesorios
     @app_commands.command(name="edit_load", description="Editar un loadout existente. [ADMINISTRADOR - PREMIUM]")
     @app_commands.default_permissions(administrator=True)
-    async def edit_load(self, interaction: discord.Interaction,
+    async def edit_load(self, interaction: Interaction,
                         weapon_name: str,
                         optic: str = None, muzzle: str = None, barrel: str = None,
                         underbarrel: str = None, magazine: str = None,
@@ -163,7 +164,7 @@ async def add_load(self, interaction: discord.Interaction,
     # /del_load con validación premium
     @app_commands.command(name="del_load", description="Eliminar un loadout. [ADMINISTRADOR - PREMIUM]")
     @app_commands.default_permissions(administrator=True)
-    async def del_load(self, interaction: discord.Interaction, weapon_name: str):
+    async def del_load(self, interaction: Interaction, weapon_name: str):
         user_id = str(interaction.user.id)
         if not is_premium(user_id):
             await interaction.response.send_message(
@@ -184,7 +185,7 @@ async def add_load(self, interaction: discord.Interaction,
 
     # /offbot solo para el owner
     @app_commands.command(name="offbot", description="Expulsar al bot del servidor (solo el Owner).")
-    async def offbot(self, interaction: discord.Interaction):
+    async def offbot(self, interaction: Interaction):
         if interaction.user.id != OWNER_ID:
             await interaction.response.send_message("No tienes permiso para usar este comando.", ephemeral=True)
             return
@@ -203,14 +204,14 @@ async def add_load(self, interaction: discord.Interaction,
     # /setbot para canal exclusivo
     @app_commands.command(name="setbot", description="Restringir /loadouts a un canal específico. [ADMINISTRADOR - PREMIUM]")
     @app_commands.default_permissions(administrator=True)
-    async def setbot(self, interaction: discord.Interaction, channel: discord.TextChannel):
+    async def setbot(self, interaction: Interaction, channel: discord.TextChannel):
         self.guild_channels[interaction.guild_id] = channel.id
         await interaction.response.send_message(f"Canal configurado: {channel.mention}", ephemeral=True)
 
     # /unsetbot para permitir en todos los canales
     @app_commands.command(name="unsetbot", description="Permitir que /loadouts se use en cualquier canal. [ADMINISTRADOR - PREMIUM]")
     @app_commands.default_permissions(administrator=True)
-    async def unsetbot(self, interaction: discord.Interaction):
+    async def unsetbot(self, interaction: Interaction):
         if interaction.guild_id in self.guild_channels:
             del self.guild_channels[interaction.guild_id]
             await interaction.response.send_message("Restricción de canal eliminada.", ephemeral=True)
@@ -219,7 +220,7 @@ async def add_load(self, interaction: discord.Interaction,
 
     # /info para mostrar información sobre el premium
     @app_commands.command(name="info", description="Información sobre cómo obtener premium.")
-    async def info(self, interaction: discord.Interaction):
+    async def info(self, interaction: Interaction):
         embed = discord.Embed(
             title="⭐ Información Premium",
             description=(
