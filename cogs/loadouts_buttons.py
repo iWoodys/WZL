@@ -24,10 +24,10 @@ class LoadoutButton(discord.ui.Button):
                 if field in data:
                     embed.add_field(name=field, value=data[field], inline=False)
 
-            if "image_url" in data:
-                embed.set_image(url=data["image_url"])
+            image_url = data.get("image_url", "")
+            if image_url.startswith("http"):
+                embed.set_image(url=image_url)
 
-            # RESPUESTA única
             await interaction.response.send_message(
                 content="Aquí están los detalles del loadout:",
                 embed=embed,
@@ -35,7 +35,7 @@ class LoadoutButton(discord.ui.Button):
             )
 
         except Exception as e:
-            await interaction.response.send_message(f"❌ Ocurrió un error al mostrar el loadout.", ephemeral=True)
+            await interaction.response.send_message("❌ Ocurrió un error al mostrar el loadout.", ephemeral=True)
             print(f"Error en LoadoutButton: {e}")
 
 class LoadoutView(discord.ui.View):
