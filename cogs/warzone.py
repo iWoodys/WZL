@@ -1,12 +1,11 @@
 import discord
-from discord import Interaction
+from discord import Interaction, app_commands
 from discord.ext import commands
-from discord import app_commands
 from firebase import get_server_loadouts
 from premium import is_premium
 import asyncio
 import os
-from google.cloud import firestore  # Import necesario para eliminar campos
+from google.cloud import firestore
 from urllib.parse import urlparse
 from cogs.loadouts_buttons import LoadoutView
 
@@ -18,13 +17,12 @@ def is_valid_url(url):
         return all([result.scheme in ("http", "https"), result.netloc])
     except:
         return False
-        
+
 class Warzone(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.guild_channels = {}
 
-    # /loadouts
     @app_commands.command(name="loadouts", description="Ver los loadouts disponibles.")
     async def loadouts(self, interaction: Interaction):
         await interaction.response.defer()
@@ -37,10 +35,7 @@ class Warzone(commands.Cog):
         ref = get_server_loadouts(interaction.guild_id)
         docs = ref.stream()
 
-        loadouts = []
-        for doc in docs:
-            data = doc.to_dict()
-            loadouts.append((doc.id, data.get('title', doc.id)))
+        loadouts = [(doc.id, doc.to_dict().get('title', doc.id)) for doc in docs]
 
         if not loadouts:
             await interaction.followup.send("No hay loadouts disponibles.", ephemeral=True)
@@ -50,63 +45,54 @@ class Warzone(commands.Cog):
             title=f"{interaction.user.display_name}, estos son los loadouts actuales:",
             color=discord.Color.dark_green()
         )
-
         loadouts_text = "\n".join([f"{idx}. {title}" for idx, (_, title) in enumerate(loadouts, 1)])
         embed.add_field(name="Loadouts:", value=loadouts_text, inline=False)
 
         await interaction.followup.send(embed=embed, view=LoadoutView(ref, loadouts), ephemeral=False)
 
-# /add_load con validación premium y validación de URL
-@app_commands.command(name="add_load", description="Agregar un nuevo loadout. [ADMINISTRADOR]")
-@app_commands.default_permissions(administrator=True)
-async def add_load(self, interaction: Interaction,
-                   weapon_name: str, title: str, image_url: str,
-                   optic: str = "NO", muzzle: str = "NO", barrel: str = "NO",
-                   underbarrel: str = "NO", magazine: str = "NO",
-                   rear_grip: str = "NO", fire_mods: str = "NO",
-                   stock: str = "NO", laser: str = "NO"):
-    user_id = str(interaction.user.id)
-    guild_id = str(interaction.guild.id)
-    ref = get_server_loadouts(guild_id)
+    @app_commands.command(name="add_load", description="Agregar un nuevo loadout. [ADMINISTRADOR]")
+    @app_commands.default_permissions(administrator=True)
+    async def add_load(self, interaction: Interaction,
+                       weapon_name: str, title: str, image_url: str,
+                       optic: str = "NO", muzzle: str = "NO", barrel: str = "NO",
+                       underbarrel: str = "NO", magazine: str = "NO",
+                       rear_grip: str = "NO", fire_mods: str = "NO",
+                       stock: str = "NO", laser: str = "NO"):
+        user_id = str(interaction.user.id)
+        guild_id = str(interaction.guild.id)
+        ref = get_server_loadouts(guild_id)
 
-    docs = list(ref.stream())
-    if not is_premium(user_id) and len(docs) >= 5:
-        await interaction.response.send_message(
-            "❌ Alcanzaste el límite de 5 loadouts. Hazte premium para guardar más.",
-            ephemeral=True
-        )
-        return
+        docs = list(ref.stream())
+        if not is_premium(user_id) and len(docs) >= 5:
+            await interaction.response.send_message("❌ Alcanzaste el límite de 5 loadouts. Hazte premium para guardar más.", ephemeral=True)
+            return
 
-    if not is_valid_url(image_url):
-        await interaction.response.send_message(
-            "❌ La URL de la imagen no es válida. Asegúrate de que comience con http o https.",
-            ephemeral=True
-        )
-        return
+        if not is_valid_url(image_url):
+            await interaction.response.send_message("❌ La URL de la imagen no es válida. Asegúrate de que comience con http o https.", ephemeral=True)
+            return
 
-    accessories = {
-        "Optic": optic,
-        "Muzzle": muzzle,
-        "Barrel": barrel,
-        "Underbarrel": underbarrel,
-        "Magazine": magazine,
-        "Rear Grip": rear_grip,
-        "Fire Mods": fire_mods,
-        "Stock": stock,
-        "Laser": laser
-    }
-    accessories = {k: v for k, v in accessories.items() if v and v.upper() != "NO"}
+        accessories = {
+            "Optic": optic,
+            "Muzzle": muzzle,
+            "Barrel": barrel,
+            "Underbarrel": underbarrel,
+            "Magazine": magazine,
+            "Rear Grip": rear_grip,
+            "Fire Mods": fire_mods,
+            "Stock": stock,
+            "Laser": laser
+        }
+        accessories = {k: v for k, v in accessories.items() if v and v.upper() != "NO"}
 
-    data = {
-        "title": title,
-        "image_url": image_url,
-        **accessories
-    }
+        data = {
+            "title": title,
+            "image_url": image_url,
+            **accessories
+        }
 
-    ref.document(weapon_name).set(data)
-    await interaction.response.send_message(f"✅ Loadout `{title}` agregado correctamente.", ephemeral=True)
+        ref.document(weapon_name).set(data)
+        await interaction.response.send_message(f"✅ Loadout `{title}` agregado correctamente.", ephemeral=True)
 
-    # /edit_load con eliminación de campos si el valor es "NO" y nuevos accesorios
     @app_commands.command(name="edit_load", description="Editar un loadout existente. [ADMINISTRADOR - PREMIUM]")
     @app_commands.default_permissions(administrator=True)
     async def edit_load(self, interaction: Interaction,
@@ -117,10 +103,7 @@ async def add_load(self, interaction: Interaction,
                         stock: str = None, laser: str = None):
         user_id = str(interaction.user.id)
         if not is_premium(user_id):
-            await interaction.response.send_message(
-                "❌ Este comando es exclusivo para usuarios premium.",
-                ephemeral=True
-            )
+            await interaction.response.send_message("❌ Este comando es exclusivo para usuarios premium.", ephemeral=True)
             return
 
         ref = get_server_loadouts(interaction.guild_id)
@@ -161,16 +144,12 @@ async def add_load(self, interaction: Interaction,
 
         await interaction.response.send_message(f"✅ Loadout `{weapon_name}` actualizado correctamente.", ephemeral=True)
 
-    # /del_load con validación premium
     @app_commands.command(name="del_load", description="Eliminar un loadout. [ADMINISTRADOR - PREMIUM]")
     @app_commands.default_permissions(administrator=True)
     async def del_load(self, interaction: Interaction, weapon_name: str):
         user_id = str(interaction.user.id)
         if not is_premium(user_id):
-            await interaction.response.send_message(
-                "❌ Este comando es exclusivo para usuarios premium.",
-                ephemeral=True
-            )
+            await interaction.response.send_message("❌ Este comando es exclusivo para usuarios premium.", ephemeral=True)
             return
 
         ref = get_server_loadouts(interaction.guild_id)
@@ -183,7 +162,6 @@ async def add_load(self, interaction: Interaction,
         ref.document(weapon_name).delete()
         await interaction.response.send_message(f"Loadout `{weapon_name}` eliminado correctamente.", ephemeral=True)
 
-    # /offbot solo para el owner
     @app_commands.command(name="offbot", description="Expulsar al bot del servidor (solo el Owner).")
     async def offbot(self, interaction: Interaction):
         if interaction.user.id != OWNER_ID:
@@ -201,14 +179,12 @@ async def add_load(self, interaction: Interaction,
         await asyncio.sleep(2)
         await interaction.guild.leave()
 
-    # /setbot para canal exclusivo
     @app_commands.command(name="setbot", description="Restringir /loadouts a un canal específico. [ADMINISTRADOR - PREMIUM]")
     @app_commands.default_permissions(administrator=True)
     async def setbot(self, interaction: Interaction, channel: discord.TextChannel):
         self.guild_channels[interaction.guild_id] = channel.id
         await interaction.response.send_message(f"Canal configurado: {channel.mention}", ephemeral=True)
 
-    # /unsetbot para permitir en todos los canales
     @app_commands.command(name="unsetbot", description="Permitir que /loadouts se use en cualquier canal. [ADMINISTRADOR - PREMIUM]")
     @app_commands.default_permissions(administrator=True)
     async def unsetbot(self, interaction: Interaction):
@@ -218,15 +194,11 @@ async def add_load(self, interaction: Interaction,
         else:
             await interaction.response.send_message("No había restricciones activas.", ephemeral=True)
 
-    # /info para mostrar información sobre el premium
     @app_commands.command(name="info", description="Información sobre cómo obtener premium.")
     async def info(self, interaction: Interaction):
         embed = discord.Embed(
             title="⭐ Información Premium",
-            description=(
-                "¿Quieres más loadouts, funciones exclusivas e invitar el bot a tu servidor?\n\n"
-                "📩 Contacta directamente al desarrollador por Discord: `AkariiDEV`"
-            ),
+            description="¿Quieres más loadouts, funciones exclusivas e invitar el bot a tu servidor?\n\n📩 Contacta directamente al desarrollador por Discord: `AkariiDEV`",
             color=discord.Color.gold()
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
