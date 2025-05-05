@@ -50,51 +50,50 @@ class Warzone(commands.Cog):
 
         await interaction.followup.send(embed=embed, view=LoadoutView(ref, loadouts), ephemeral=False)
 
-@app_commands.command(name="add_load", description="Agregar un nuevo loadout. [ADMINISTRADOR]")
-@app_commands.default_permissions(administrator=True)
-async def add_load(self, interaction: Interaction,
-                   weapon_name: str, title: str, image_url: str = None,
-                   optic: str = "NO", muzzle: str = "NO", barrel: str = "NO",
-                   underbarrel: str = "NO", magazine: str = "NO",
-                   rear_grip: str = "NO", fire_mods: str = "NO",
-                   stock: str = "NO", laser: str = "NO"):
-    user_id = str(interaction.user.id)
-    guild_id = str(interaction.guild.id)
-    ref = get_server_loadouts(guild_id)
+    @app_commands.command(name="add_load", description="Agregar un nuevo loadout. [ADMINISTRADOR]")
+    @app_commands.default_permissions(administrator=True)
+    async def add_load(self, interaction: Interaction,
+                       weapon_name: str, title: str, image_url: str = None,
+                       optic: str = "NO", muzzle: str = "NO", barrel: str = "NO",
+                       underbarrel: str = "NO", magazine: str = "NO",
+                       rear_grip: str = "NO", fire_mods: str = "NO",
+                       stock: str = "NO", laser: str = "NO"):
+        user_id = str(interaction.user.id)
+        guild_id = str(interaction.guild.id)
+        ref = get_server_loadouts(guild_id)
 
-    docs = list(ref.stream())
-    if not is_premium(user_id) and len(docs) >= 5:
-        await interaction.response.send_message("❌ Alcanzaste el límite de 5 loadouts. Hazte premium para guardar más.", ephemeral=True)
-        return
+        docs = list(ref.stream())
+        if not is_premium(user_id) and len(docs) >= 5:
+            await interaction.response.send_message("❌ Alcanzaste el límite de 5 loadouts. Hazte premium para guardar más.", ephemeral=True)
+            return
 
-    if image_url and not is_valid_url(image_url):
-        await interaction.response.send_message("❌ La URL de la imagen no es válida. Asegúrate de que comience con http o https.", ephemeral=True)
-        return
+        if image_url and not is_valid_url(image_url):
+            await interaction.response.send_message("❌ La URL de la imagen no es válida. Asegúrate de que comience con http o https.", ephemeral=True)
+            return
 
-    accessories = {
-        "Optic": optic,
-        "Muzzle": muzzle,
-        "Barrel": barrel,
-        "Underbarrel": underbarrel,
-        "Magazine": magazine,
-        "Rear Grip": rear_grip,
-        "Fire Mods": fire_mods,
-        "Stock": stock,
-        "Laser": laser
-    }
-    accessories = {k: v for k, v in accessories.items() if v and v.upper() != "NO"}
+        accessories = {
+            "Optic": optic,
+            "Muzzle": muzzle,
+            "Barrel": barrel,
+            "Underbarrel": underbarrel,
+            "Magazine": magazine,
+            "Rear Grip": rear_grip,
+            "Fire Mods": fire_mods,
+            "Stock": stock,
+            "Laser": laser
+        }
+        accessories = {k: v for k, v in accessories.items() if v and v.upper() != "NO"}
 
-    data = {
-        "title": title,
-        **accessories
-    }
+        data = {
+            "title": title,
+            **accessories
+        }
 
-    if image_url:
-        data["image_url"] = image_url
+        if image_url:
+            data["image_url"] = image_url
 
-    ref.document(weapon_name).set(data)
-    await interaction.response.send_message(f"✅ Loadout `{title}` agregado correctamente.", ephemeral=True)
-
+        ref.document(weapon_name).set(data)
+        await interaction.response.send_message(f"✅ Loadout `{title}` agregado correctamente.", ephemeral=True)
 
     @app_commands.command(name="edit_load", description="Editar un loadout existente. [ADMINISTRADOR - PREMIUM]")
     @app_commands.default_permissions(administrator=True)
