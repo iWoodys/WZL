@@ -23,13 +23,13 @@ class Warzone(commands.Cog):
         self.bot = bot
         self.guild_channels = {}
 
-    @app_commands.command(name="loadouts", description="Ver los loadouts disponibles.")
+    @app_commands.command(name="loadouts", description="View available loadouts.")
     async def loadouts(self, interaction: Interaction):
         await interaction.response.defer()
 
         if interaction.guild_id in self.guild_channels:
             if interaction.channel.id != self.guild_channels[interaction.guild_id]:
-                await interaction.followup.send("Este comando solo puede usarse en el canal permitido.", ephemeral=True)
+                await interaction.followup.send("This command can only be used in the allowed channel.", ephemeral=True)
                 return
 
         ref = get_server_loadouts(interaction.guild_id)
@@ -38,11 +38,11 @@ class Warzone(commands.Cog):
         loadouts = [(doc.id, doc.to_dict().get('title', doc.id)) for doc in docs]
 
         if not loadouts:
-            await interaction.followup.send("No hay loadouts disponibles.", ephemeral=True)
+            await interaction.followup.send("No loadouts available.", ephemeral=True)
             return
 
         embed = discord.Embed(
-            title=f"{interaction.user.display_name}, estos son los loadouts actuales:",
+            title=f"{interaction.user.display_name}, here are the current loadouts:",
             color=discord.Color.dark_green()
         )
         loadouts_text = "\n".join([f"{idx}. {title}" for idx, (_, title) in enumerate(loadouts, 1)])
@@ -50,7 +50,7 @@ class Warzone(commands.Cog):
 
         await interaction.followup.send(embed=embed, view=LoadoutView(ref, loadouts), ephemeral=False)
 
-    @app_commands.command(name="add_load", description="Agregar un nuevo loadout. [ADMINISTRADOR]")
+    @app_commands.command(name="add_load", description="Add a new loadout. [ADMINISTRATOR]")
     @app_commands.default_permissions(administrator=True)
     async def add_load(self, interaction: Interaction,
                        weapon_name: str, title: str, image_url: str = None,
@@ -64,11 +64,11 @@ class Warzone(commands.Cog):
 
         docs = list(ref.stream())
         if not is_premium(user_id) and len(docs) >= 5:
-            await interaction.response.send_message("❌ Alcanzaste el límite de 5 loadouts. Hazte premium para guardar más.", ephemeral=True)
+            await interaction.response.send_message("❌ You reached the limit of 5 loadouts. Upgrade to premium to save more.", ephemeral=True)
             return
 
         if image_url and not is_valid_url(image_url):
-            await interaction.response.send_message("❌ La URL de la imagen no es válida. Asegúrate de que comience con http o https.", ephemeral=True)
+            await interaction.response.send_message("❌ Invalid image URL. Make sure it starts with http or https.", ephemeral=True)
             return
 
         accessories = {
@@ -93,9 +93,9 @@ class Warzone(commands.Cog):
             data["image_url"] = image_url
 
         ref.document(weapon_name).set(data)
-        await interaction.response.send_message(f"✅ Loadout `{title}` agregado correctamente.", ephemeral=True)
+        await interaction.response.send_message(f"✅ Loadout `{title}` added successfully.", ephemeral=True)
 
-    @app_commands.command(name="edit_load", description="Editar un loadout existente. [ADMINISTRADOR - PREMIUM]")
+    @app_commands.command(name="edit_load", description="Edit an existing loadout. [ADMINISTRATOR - PREMIUM]")
     @app_commands.default_permissions(administrator=True)
     async def edit_load(self, interaction: Interaction,
                         weapon_name: str,
@@ -105,7 +105,7 @@ class Warzone(commands.Cog):
                         stock: str = None, laser: str = None):
         user_id = str(interaction.user.id)
         if not is_premium(user_id):
-            await interaction.response.send_message("❌ Este comando es exclusivo para usuarios premium.", ephemeral=True)
+            await interaction.response.send_message("❌ This command is only for premium users.", ephemeral=True)
             return
 
         ref = get_server_loadouts(interaction.guild_id)
@@ -113,7 +113,7 @@ class Warzone(commands.Cog):
         doc = doc_ref.get()
 
         if not doc.exists:
-            await interaction.response.send_message("Loadout no encontrado.", ephemeral=True)
+            await interaction.response.send_message("Loadout not found.", ephemeral=True)
             return
 
         update_data = {}
@@ -144,63 +144,63 @@ class Warzone(commands.Cog):
         if delete_fields:
             doc_ref.update({field: firestore.DELETE_FIELD for field in delete_fields})
 
-        await interaction.response.send_message(f"✅ Loadout `{weapon_name}` actualizado correctamente.", ephemeral=True)
+        await interaction.response.send_message(f"✅ Loadout `{weapon_name}` updated successfully.", ephemeral=True)
 
-    @app_commands.command(name="del_load", description="Eliminar un loadout. [ADMINISTRADOR - PREMIUM]")
+    @app_commands.command(name="del_load", description="Delete a loadout. [ADMINISTRATOR - PREMIUM]")
     @app_commands.default_permissions(administrator=True)
     async def del_load(self, interaction: Interaction, weapon_name: str):
         user_id = str(interaction.user.id)
         if not is_premium(user_id):
-            await interaction.response.send_message("❌ Este comando es exclusivo para usuarios premium.", ephemeral=True)
+            await interaction.response.send_message("❌ This command is only for premium users.", ephemeral=True)
             return
 
         ref = get_server_loadouts(interaction.guild_id)
         doc = ref.document(weapon_name).get()
 
         if not doc.exists:
-            await interaction.response.send_message("Loadout no encontrado.", ephemeral=True)
+            await interaction.response.send_message("Loadout not found.", ephemeral=True)
             return
 
         ref.document(weapon_name).delete()
-        await interaction.response.send_message(f"Loadout `{weapon_name}` eliminado correctamente.", ephemeral=True)
+        await interaction.response.send_message(f"Loadout `{weapon_name}` deleted successfully.", ephemeral=True)
 
-    @app_commands.command(name="offbot", description="Expulsar al bot del servidor (solo el Owner).")
+    @app_commands.command(name="offbot", description="Remove the bot from the server (Owner only).")
     async def offbot(self, interaction: Interaction):
         if interaction.user.id != OWNER_ID:
-            await interaction.response.send_message("No tienes permiso para usar este comando.", ephemeral=True)
+            await interaction.response.send_message("You don't have permission to use this command.", ephemeral=True)
             return
 
         await interaction.response.defer(ephemeral=True)
         channel = interaction.guild.text_channels[0]
         embed = discord.Embed(
-            title="Gracias por utilizar el servidor",
-            description="@everyone El bot se está desconectando. ¡Hasta pronto!",
+            title="Thanks for using the server",
+            description="@everyone The bot is disconnecting. See you soon!",
             color=discord.Color.dark_green()
         )
         await channel.send(embed=embed)
         await asyncio.sleep(2)
         await interaction.guild.leave()
 
-    @app_commands.command(name="setbot", description="Restringir /loadouts a un canal específico. [ADMINISTRADOR - PREMIUM]")
+    @app_commands.command(name="setbot", description="Restrict /loadouts to a specific channel. [ADMINISTRATOR - PREMIUM]")
     @app_commands.default_permissions(administrator=True)
     async def setbot(self, interaction: Interaction, channel: discord.TextChannel):
         self.guild_channels[interaction.guild_id] = channel.id
-        await interaction.response.send_message(f"Canal configurado: {channel.mention}", ephemeral=True)
+        await interaction.response.send_message(f"Channel configured: {channel.mention}", ephemeral=True)
 
-    @app_commands.command(name="unsetbot", description="Permitir que /loadouts se use en cualquier canal. [ADMINISTRADOR - PREMIUM]")
+    @app_commands.command(name="unsetbot", description="Allow /loadouts in any channel. [ADMINISTRATOR - PREMIUM]")
     @app_commands.default_permissions(administrator=True)
     async def unsetbot(self, interaction: Interaction):
         if interaction.guild_id in self.guild_channels:
             del self.guild_channels[interaction.guild_id]
-            await interaction.response.send_message("Restricción de canal eliminada.", ephemeral=True)
+            await interaction.response.send_message("Channel restriction removed.", ephemeral=True)
         else:
-            await interaction.response.send_message("No había restricciones activas.", ephemeral=True)
+            await interaction.response.send_message("There was no active restriction.", ephemeral=True)
 
-    @app_commands.command(name="info", description="Información sobre cómo obtener premium.")
+    @app_commands.command(name="info", description="Information on how to get premium.")
     async def info(self, interaction: Interaction):
         embed = discord.Embed(
-            title="⭐ Información Premium",
-            description="¿Quieres más loadouts, funciones exclusivas e invitar el bot a tu servidor?\n\n📩 Contacta directamente al desarrollador por Discord: `AkariiDEV`",
+            title="⭐ Premium Info",
+            description="Want more loadouts, exclusive features, and to invite the bot to your server?\n\n📩 Contact the developer directly via Discord: `AkariiDEV`",
             color=discord.Color.gold()
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
