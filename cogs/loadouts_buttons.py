@@ -10,7 +10,7 @@ class LoadoutButton(discord.ui.Button):
         try:
             doc = self.ref.document(self.doc_id).get()
             if not doc.exists:
-                await interaction.response.send_message("❌ Loadout no encontrado.", ephemeral=True)
+                await interaction.response.send_message("❌ Loadout not found.", ephemeral=True)
                 return
 
             data = doc.to_dict()
@@ -19,24 +19,26 @@ class LoadoutButton(discord.ui.Button):
                 color=discord.Color.dark_green()
             )
 
+            # Group attachments in a single section with formatted display
             fields = ["Optic", "Muzzle", "Barrel", "Underbarrel", "Magazine", "Rear Grip", "Fire Mods", "Stock", "Laser"]
-            for field in fields:
-                if field in data:
-                    embed.add_field(name=field, value=data[field], inline=False)
+            accessory_lines = [f"**{field}:** {data[field]}" for field in fields if field in data]
+            if accessory_lines:
+                embed.add_field(name="Attachments", value="\n".join(accessory_lines), inline=False)
 
+            # Add image if available
             image_url = data.get("image_url", "")
             if image_url.startswith("http"):
                 embed.set_image(url=image_url)
 
             await interaction.response.send_message(
-                content="Aquí están los detalles del loadout:",
+                content="Here are the loadout details:",
                 embed=embed,
                 ephemeral=False
             )
 
         except Exception as e:
-            await interaction.response.send_message("❌ Ocurrió un error al mostrar el loadout.", ephemeral=True)
-            print(f"Error en LoadoutButton: {e}")
+            await interaction.response.send_message("❌ An error occurred while showing the loadout.", ephemeral=True)
+            print(f"Error in LoadoutButton: {e}")
 
 class LoadoutView(discord.ui.View):
     def __init__(self, ref, loadouts):
