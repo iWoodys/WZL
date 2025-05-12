@@ -13,6 +13,7 @@ BOT_OWNER_ID = int(os.getenv("BOT_OWNER_ID"))
 
 # ⚠️ Reemplazá este valor por el ID del canal que querés actualizar
 GUILD_COUNT_CHANNEL_ID = 1367591515416825876
+LOG_CHANNEL_ID = 1367591515416825876  # 👈 Reemplazá esto por el ID de tu canal de logs
 
 intents = discord.Intents.default()
 intents.guilds = True
@@ -34,6 +35,35 @@ async def on_ready():
 
     # Iniciar tarea de actualización del canal
     actualizar_nombre_canal.start()
+
+@bot.event
+async def on_guild_join(guild):
+    log_channel = bot.get_channel(LOG_CHANNEL_ID)
+
+    if not log_channel:
+        print("No se encontró el canal de log.")
+        return
+
+    invite_link = "No se pudo crear invitación"
+    try:
+        for channel in guild.text_channels:
+            if channel.permissions_for(guild.me).create_instant_invite:
+                invite = await channel.create_invite(max_age=3600, max_uses=1)
+                invite_link = invite.url
+                break
+    except Exception as e:
+        print(f"No se pudo crear la invitación: {e}")
+
+    embed = discord.Embed(
+        title="🔔 Nuevo servidor detectado",
+        color=discord.Color.green()
+    )
+    embed.add_field(name="📛 Nombre", value=guild.name, inline=False)
+    embed.add_field(name="🆔 ID", value=str(guild.id), inline=False)
+    embed.add_field(name="🔗 Invitación", value=invite_link, inline=False)
+    embed.set_footer(text=f"Tiene {guild.member_count} miembros")
+
+    await log_channel.send(embed=embed)
 
 @tasks.loop(minutes=10)
 async def actualizar_nombre_canal():
